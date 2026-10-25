@@ -97,14 +97,15 @@ legend { padding: 0 6px; font-weight: 700; }
 
 /* ---- Shell ---- */
 .shell { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100dvh; }
-.side { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: 22px; padding: 22px 14px 16px; color: var(--ink); background: var(--surface); border-right: 1px solid var(--line); }
-.side-brand { padding: 0 10px; min-height: 40px; }
-.side-brand .logo { width: 190px; }
-.side-nav { display: grid; gap: 2px; }
+.side { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: clamp(10px, 2.4dvh, 22px); padding: clamp(12px, 2.4dvh, 22px) 14px 16px; overflow-y: auto; color: var(--ink); background: var(--surface); border-right: 1px solid var(--line); }
+/* The logos scale with the window height so they never overlap the menu; if the window is very short the sidebar scrolls instead. */
+.side-brand { flex: none; padding: 0 10px; min-height: 40px; }
+.side-brand .logo { width: clamp(110px, 22dvh, 190px); }
+.side-nav { flex: none; display: grid; gap: 2px; }
 .side-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: var(--ink-3); font-size: .9375rem; letter-spacing: .04em; text-decoration: none; border-radius: var(--radius); }
 .side-link:hover { color: var(--ink); background: var(--paper); }
 .side-link[aria-current="page"] { color: var(--ink); font-weight: 700; background: var(--paper); box-shadow: inset 4px 0 0 var(--brand); }
-.side-foot { margin-top: auto; padding: 0 10px; font-size: .8125rem; color: var(--ink-2); }
+.side-foot { flex: none; margin-top: auto; padding: 0 10px; font-size: .8125rem; color: var(--ink-2); }
 .side-user { display: grid; gap: 2px; margin: 0 0 10px; }
 .side-email { overflow-wrap: anywhere; color: var(--ink); }
 .side-role { color: var(--ink-3); }
@@ -226,7 +227,8 @@ th[aria-sort="descending"] .sort-btn::after { content: "\25BC"; font-size: .65em
   .shell { display: block; }
   .side { display: none; }
   .mobile-brand { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
-  .mobile-brand .logo { height: 40px; width: auto; }
+  .mobile-brand .logo { height: clamp(28px, 9vw, 40px); width: auto; min-width: 0; }
+  .mobile-brand .logo-mark { height: clamp(28px, 9vw, 40px); }
   main { padding: 18px 16px 20px; }
   .tabbar { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--line-strong); }
   .tab-link { position: relative; display: grid; justify-items: center; gap: 2px; padding: 9px 4px 8px; font: 400 .6875rem var(--font-ui); color: var(--ink-3); text-decoration: none; background: none; border: 0; cursor: pointer; }
