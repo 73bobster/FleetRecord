@@ -28,6 +28,8 @@ const tabs = () => visibleNav().slice(0, TAB_COUNT);
 // The menu is in the order the superuser has set (Settings, Screens); the standard order is Dashboard, Tasks, Incidents, Service / Repair, then the rest.
 const orderedNav = () => { const at = new Map(menuLayout().map((r, i) => [r.id, i])); return [...NAV].sort((a, b) => (at.get(a.id) ?? 99) - (at.get(b.id) ?? 99)); };
 const visibleNav = () => orderedNav().filter((n) => (!n.when || n.when()) && screenOn(n.id));
+// Where to send someone whose usual first screen is switched off for their user type: the first screen in their menu, or Help.
+export const firstScreenHref = () => visibleNav()[0]?.href || '#/help';
 const HELP = { id: 'help', label: 'Help', href: '#/help' };
 let current = '';      // the screen being shown, for the version at the bottom and for feedback
 let badgeCount = 0;

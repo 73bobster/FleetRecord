@@ -1,6 +1,6 @@
 // Turns audit-log entries into plain sentences. Used by the History tabs and the Audit log screen.
 import * as api from './api.js';
-import { ROLE_LABEL, MEMBER_STATUS_LABEL, OPTIONAL_SCREENS, dashLayout } from './state.js';
+import { ROLE_LABEL, ROLE_ORDER, MEMBER_STATUS_LABEL, screenName, dashLayout } from './state.js';
 import { html, plate, fmtDateTime, fmtDateShort, fmtMonth, fmtMoney } from './ui.js';
 import { driverName, CATEGORY_NOUN, INCIDENT_KIND_LABEL, FINE_TYPE_LABEL, LEAVING_REASON_LABEL, DISPOSAL_REASON_LABEL, LICENCE_STATUS_LABEL } from './domain.js';
 
@@ -121,9 +121,8 @@ function describe(e, L) {
     case 'organisations':
       if (changed(e, 'settings')) {
         const was = o.settings || {}; const now = n.settings || {};
-        const keys = Object.keys(now).filter((k) => JSON.stringify(now[k]) !== JSON.stringify(was[k]));
+        const keys = Object.keys(now).filter((k) => JSON.stringify(now[k]) !== JSON.stringify(was[k]) && !(k === 'hidden_screens' && JSON.stringify(now.hidden_screens_by_type) !== JSON.stringify(was.hidden_screens_by_type)));
         const show = (x) => (x && typeof x === 'object' ? Object.entries(x).map(([a, b]) => `${a.replace(/_/g, ' ')} ${b}`).join(', ') : x);
-        const screenName = (id) => OPTIONAL_SCREENS.find(([k]) => k === id)?.[1] || id;
         const one = (k) => {
           if (k === 'dashboard') {
             // which dashboard sections were hidden or shown, and whether the order changed
@@ -131,6 +130,17 @@ function describe(e, L) {
             const hid = after.filter((x) => !x.show && wasOn.has(x.id)).map((x) => x.label); const shown = after.filter((x) => x.show && !wasOn.has(x.id)).map((x) => x.label);
             const moved = before.map((x) => x.id).join() !== after.map((x) => x.id).join();
             return `dashboard display: ${[hid.length ? `hid ${hid.join(', ')}` : '', shown.length ? `showed ${shown.join(', ')}` : '', moved ? `new order ${after.map((x) => x.label).join(', ')}` : ''].filter(Boolean).join('; ') || 'no visible change'}`;
+          }
+          if (k === 'hidden_screens_by_type') {
+            // which screens were switched off or on, for which user types (before the first save, the old single list applied to everyone)
+            const lines = ROLE_ORDER.map((role) => {
+              const before = Array.isArray(was.hidden_screens_by_type?.[role]) ? was.hidden_screens_by_type[role] : (Array.isArray(was.hidden_screens) ? was.hidden_screens : []);
+              const after = Array.isArray(now.hidden_screens_by_type?.[role]) ? now.hidden_screens_by_type[role] : [];
+              const off = after.filter((id) => !before.includes(id)).map(screenName); const back = before.filter((id) => !after.includes(id)).map(screenName);
+              const what = [off.length ? `switched off ${off.join(', ')}` : '', back.length ? `switched on ${back.join(', ')}` : ''].filter(Boolean).join(' and ');
+              return what ? `${ROLE_LABEL[role]}: ${what}` : '';
+            }).filter(Boolean);
+            return lines.length ? `screens: ${lines.join('; ')}` : 'screens unchanged';
           }
           if (k !== 'hidden_screens') return `${k.replace(/_/g, ' ')} to ${show(now[k])}`;
           const before = Array.isArray(was[k]) ? was[k] : []; const after = Array.isArray(now[k]) ? now[k] : [];

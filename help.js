@@ -78,7 +78,7 @@ const GUIDES = () => [
   ], () => can.audit],
   ['settings', 'Settings', 'Set up by the superuser.', [
     'Users and access: invite people, change their user type, suspend or remove them. Nobody is deleted. The "Who can do what" table is at the bottom of that section.',
-    'Screens: switch off screens you are not using yet. They are hidden for everyone, and nothing is deleted.',
+    'Screens: choose which user types see each screen, and the order of the menu. A screen you switch off disappears from that user type\'s menu, and nothing is deleted.',
     'Dashboard display: choose which sections of the dashboard are shown and in what order, for everyone.',
     'Feedback and changes: everything people have sent in, with priority, target date and status.',
     'Vehicles needed: the fewest vehicles of each type you need each day of the week. The Planner uses these.',
