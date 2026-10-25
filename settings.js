@@ -1,7 +1,7 @@
 // Settings (superuser only). In order: users and access, which screens are switched on, the dashboard display, the feedback log, vehicles needed,
 // depots, typical fuel economy, the date format and, last, the exit pack (a full download of the organisation's data). Compliance types, templates and branding come later.
 import * as api from './api.js';
-import { state, can, ROLE_LABEL, ROLE_HINT, ROLE_ORDER, ACCESS_SUMMARY, MEMBER_STATUS_LABEL, OPTIONAL_SCREENS, screenOn, DASH_SECTIONS, dashLayout, menuLayout, MENU_STANDARD } from './state.js';
+import { state, can, ROLE_LABEL, ROLE_HINT, ROLE_ORDER, ACCESS_SUMMARY, MEMBER_STATUS_LABEL, screenOn, screenLocked, DASH_SECTIONS, dashLayout, menuLayout, MENU_STANDARD } from './state.js';
 import { html, mount, on, openModal, fieldsHtml, readForm, toast, loadingHtml, emptyHtml, fmtDateShort, formatDate, DATE_FORMATS, getDateFormat, setDateFormat } from './ui.js';
 import { CATEGORY_LABEL, WEEKDAYS } from './domain.js';
 import { DEFAULT_TYPICAL_MPG, DEFAULT_MILES_PER_KWH } from './tco.js';
@@ -147,15 +147,21 @@ export async function settingsView(main) {
       </section>
       <section class="settings-block" id="set-screens">
         <div class="section-head"><h2>Screens</h2></div>
-        <p class="muted">The menu, for everyone in ${state.org.name}. Give each screen a number from 0 to 99: they are shown in the menu lowest number first. Untick a screen to switch it off. It is then hidden for everyone, including you: it leaves the menu, and links to it are taken away. Nothing is deleted, the records behind it are kept, and every change is still recorded in the audit log. Dashboard, Tasks, Vehicles, Drivers and Settings cannot be switched off, but can be moved. Help is always last.</p>
-        <form id="screens-form" class="dash-rows" novalidate>
-          <div class="dash-row head" aria-hidden="true"><span>Order</span><span>Screen</span></div>
-          ${menuLayout().map((r) => html`<div class="dash-row">
-            <input class="seq" type="text" inputmode="numeric" maxlength="2" autocomplete="off" name="seq.${r.id}" value="${String(r.seq).padStart(2, '0')}" aria-label="Order number for ${r.label}, 0 to 99">
-            ${r.optional ? html`<label class="check"><input type="checkbox" name="${r.id}" ${screenOn(r.id) ? 'checked' : ''}> <span><strong>${r.label}</strong> <span class="muted">${r.hint}</span></span></label>`
-              : html`<div class="check"><span><strong>${r.label}</strong> <span class="tag">Always on</span> <span class="muted">${r.hint}</span></span></div>`}</div>`)}
+        <p class="muted">The menu in ${state.org.name}. Give each screen a number from 0 to 99: they are shown in the menu lowest number first, the same for every user type. Then tick the user types who can see each screen. An unticked screen leaves that user type's menu, and links to it are taken away. You always keep Settings, and some screens are not available to some user types whatever you choose. Nothing is deleted, the records behind a screen are kept, and every change is still recorded in the audit log.</p>
+        <p class="hint">This hides screens; it does not make the data private. For example, cost figures can still appear on a vehicle's own page. What each user type may see and change is set by the rules under Who can do what. Help is always on and always last.</p>
+        <form id="screens-form" novalidate>
+          <div class="scroll"><table class="grid keep compact screens-table"><thead><tr><th>Order</th><th>Screen</th>${ROLE_ORDER.map((r) => html`<th class="num">${ROLE_LABEL[r]}</th>`)}</tr></thead><tbody>
+            ${menuLayout().map((r) => html`<tr>
+              <td><input class="seq" type="text" inputmode="numeric" maxlength="2" autocomplete="off" name="seq.${r.id}" value="${String(r.seq).padStart(2, '0')}" aria-label="Order number for ${r.label}, 0 to 99"></td>
+              <td><strong>${r.label}</strong> <span class="muted">${r.hint}</span></td>
+              ${ROLE_ORDER.map((role) => {
+                if (screenLocked(r.id, role)) return html`<td class="num"><span class="muted">Not available</span></td>`;
+                if (r.id === 'settings') return html`<td class="num"><input type="checkbox" checked disabled aria-label="${r.label} for ${ROLE_LABEL[role]}: always on"> <span class="muted">Always on</span></td>`;
+                return html`<td class="num"><input type="checkbox" name="on.${r.id}.${role}" ${screenOn(r.id, role) ? 'checked' : ''} aria-label="${r.label} for ${ROLE_LABEL[role]}"></td>`;
+              })}</tr>`)}
+          </tbody></table></div>
           <p class="form-error" role="alert" hidden></p>
-          <p class="btn-row"><button class="btn btn-primary" type="submit">Save screens</button><button class="btn" type="button" data-action="screens-standard">Fill in the standard order</button></p>
+          <p class="btn-row"><button class="btn btn-primary" type="submit">Save screens</button><button class="btn" type="button" data-action="screens-standard">Fill in the standard order and switch everything on</button></p>
         </form>
       </section>
       <section class="settings-block" id="set-dash">
@@ -243,8 +249,16 @@ export async function settingsView(main) {
         screen_order[r.id] = Number(raw);
       }
       const btn = form.querySelector('button[type="submit"]'); btn.disabled = true;
-      const off = OPTIONAL_SCREENS.map(([id]) => id).filter((id) => !form.elements[id].checked);
-      try { await api.saveOrgSettings({ hidden_screens: off, screen_order }); refreshNav(); toast(off.length ? `Screens saved. ${off.length} switched off.` : 'Screens saved. All switched on.'); draw(); main.querySelector('#set-screens')?.scrollIntoView?.({ block: 'start' }); }
+      // Which screens are off for each user type. Screens a user type cannot use anyway, and Settings for the superuser, are never stored.
+      const hidden_screens_by_type = {};
+      for (const role of ROLE_ORDER) hidden_screens_by_type[role] = menuLayout().map((r) => r.id).filter((id) => !screenLocked(id, role) && id !== 'settings' && !form.elements[`on.${id}.${role}`].checked);
+      const empty = ROLE_ORDER.filter((role) => menuLayout().every((r) => screenLocked(r.id, role) || r.id === 'settings' || hidden_screens_by_type[role].includes(r.id)));
+      const total = Object.values(hidden_screens_by_type).reduce((n, l) => n + l.length, 0);
+      try {
+        await api.saveOrgSettings({ hidden_screens_by_type, hidden_screens: [], screen_order }); refreshNav();
+        toast(`${total ? 'Screens saved.' : 'Screens saved. Everything is switched on.'}${empty.length ? ` ${empty.map((r) => ROLE_LABEL[r]).join(' and ')} can now see only Help${empty.includes('superuser') ? ' and Settings' : ''}.` : ''}`);
+        draw(); main.querySelector('#set-screens')?.scrollIntoView?.({ block: 'start' });
+      }
       catch (ex) { fail(ex.message || 'Could not save.'); btn.disabled = false; }
     });
     main.querySelector('#mpg-form').addEventListener('submit', async (e) => {
@@ -350,13 +364,12 @@ export async function settingsView(main) {
   });
   draw();
   on(main, {
-    // puts the standard numbers back in the boxes and ticks every section; nothing changes until Save is pressed
-    // puts the standard menu numbers back in the boxes and ticks every screen; nothing changes until Save is pressed
+    // puts the standard menu numbers back in the boxes and ticks every screen for every user type; nothing changes until Save is pressed
     'screens-standard': () => {
       const form = main.querySelector('#screens-form');
-      for (const [id, std] of MENU_STANDARD) { form.elements[`seq.${id}`].value = String(std).padStart(2, '0'); if (form.elements[id]) form.elements[id].checked = true; }
+      for (const [id, std] of MENU_STANDARD) { form.elements[`seq.${id}`].value = String(std).padStart(2, '0'); for (const role of ROLE_ORDER) { const box = form.elements[`on.${id}.${role}`]; if (box) box.checked = true; } }
       form.querySelector('.form-error').hidden = true;
-      toast('Standard order filled in. Save to apply it.');
+      toast('Standard order filled in and every screen ticked. Save to apply it.');
     },
     'dash-standard': () => {
       const form = main.querySelector('#dash-form');

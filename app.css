@@ -702,3 +702,9 @@ table.tco thead th { white-space: normal; vertical-align: bottom; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (min-width: 861px) { .period { gap: 12px; } .period .seg-btn { padding: 8px 10px; } }
 @media (min-width: 861px) { .dash .figures { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Settings, Screens: the order boxes and the per user type ticks */
+.screens-table input.seq { width: 52px; min-height: 36px; padding: 4px 6px; text-align: center; font-variant-numeric: tabular-nums; }
+.screens-table th.num, .screens-table td.num { text-align: center; white-space: nowrap; }
+.screens-table td:nth-child(2) { min-width: 240px; }
+.screens-table input[type="checkbox"] { width: 20px; height: 20px; }

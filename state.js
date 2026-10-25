@@ -32,9 +32,12 @@ export const ACCESS_SUMMARY = [
   ['Feedback log: see everything sent in, set priority, target date and status', ['Full', 'None', 'None', 'None']],
   ['Settings: users, screens, dashboard display, vehicles needed, depots, typical fuel economy, date format', ['Full', 'None', 'None', 'None']],
 ];
-// Screens the superuser can switch off for everyone (Settings, Screens). The rest are always on: the app cannot be used
-// without them. Switching a screen off only hides it: nothing is deleted and every change is still audited.
-// organisations.settings.hidden_screens holds the ids that are off.
+// Screens the superuser can switch on or off for each user type (Settings, Screens). Every menu screen can be switched, with two
+// exceptions the app needs: the superuser always keeps Settings, and the Audit log and Settings are not available to
+// user types that cannot use them whatever the setting says. Switching a screen off only hides it: nothing is deleted,
+// the data is not made private (the database rules in "Who can do what" decide that) and every change is still audited.
+// organisations.settings.hidden_screens_by_type holds { user type: [screen ids that are off] }. The older
+// settings.hidden_screens (one list, hidden for everyone) is still read when the new setting has not been saved yet.
 export const OPTIONAL_SCREENS = [
   ['planner', 'Planner', 'Vehicles available against vehicles needed, day by day.'],
   ['incidents', 'Incidents', 'Accidents, damage and fines.'],
@@ -46,7 +49,7 @@ export const OPTIONAL_SCREENS = [
   ['audit', 'Audit log', 'The screen only: every change is still recorded while it is hidden.'],
 ];
 // Every screen in the menu, with the standard order number of each (0 to 99, lowest first). The superuser can change the
-// numbers (Settings, Screens). Dashboard, Tasks, Vehicles, Drivers and Settings cannot be switched off but can be moved.
+// numbers (Settings, Screens). The order is the same for every user type.
 // organisations.settings.screen_order holds { id: number }.
 const ALWAYS_ON = {
   dashboard: ['Dashboard', 'The opening screen.'], tasks: ['Tasks', 'What is due, due soon or overdue.'], vehicles: ['Vehicles', 'The vehicle records.'],
@@ -64,8 +67,19 @@ export function menuLayout(settings = state.org?.settings) {
     return { id, label, hint, std, seq, optional: !!opt, i };
   }).sort((a, b) => a.seq - b.seq || a.i - b.i);
 }
-export const hiddenScreens = () => { const h = state.org?.settings?.hidden_screens; return Array.isArray(h) ? h.filter((id) => OPTIONAL_SCREENS.some(([k]) => k === id)) : []; };
-export const screenOn = (id) => !hiddenScreens().includes(id);
+// Every screen id that can appear in the menu, and its name.
+export const SWITCHABLE = MENU_STANDARD.map(([id]) => id);
+const SCREEN_NAMES = Object.fromEntries([...OPTIONAL_SCREENS.map(([id, label]) => [id, label]), ...Object.entries(ALWAYS_ON).map(([id, [label]]) => [id, label])]);
+export const screenName = (id) => SCREEN_NAMES[id] || 'This screen';
+// A screen a user type can never use, whatever the setting: Settings is the superuser's, and the Audit log is for superusers and admins.
+export const screenLocked = (id, role) => (id === 'settings' && role !== 'superuser') || (id === 'audit' && !['superuser', 'fleet_admin'].includes(role));
+// The screens switched off for one user type (the signed-in person's own by default).
+export function hiddenScreens(role = state.role, settings = state.org?.settings) {
+  const by = settings?.hidden_screens_by_type;
+  const list = by && typeof by === 'object' && !Array.isArray(by) ? by[role] : settings?.hidden_screens;
+  return Array.isArray(list) ? list.filter((id) => SWITCHABLE.includes(id) && !(id === 'settings' && role === 'superuser')) : [];
+}
+export const screenOn = (id, role = state.role, settings = state.org?.settings) => !hiddenScreens(role, settings).includes(id);
 // The screen a link like "#/costs/123?tab=x" belongs to.
 export const screenOfHref = (href) => (/^#\/([a-z]+)/.exec(href || '') || [])[1] || '';
 
