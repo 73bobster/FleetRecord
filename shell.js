@@ -88,22 +88,27 @@ export function renderShell({ onSwitchOrg, onSignOut }) {
   wireLogos(root);
   on(root, {
     signout: () => onSignOut(),
-    more: () => openMenu(onSignOut),
+    more: () => openMenu(onSignOut, onSwitchOrg),
     // after sending from Help or Settings, redraw that screen so the new item shows in its list
     feedback: () => feedbackModal({ section: current, onSaved: () => { if (current === 'help' || current === 'settings') dispatch(); } }),
   });
   root.querySelector('#org-switch')?.addEventListener('change', (e) => onSwitchOrg(e.target.value));
 }
 
-function openMenu(onSignOut) {
+function openMenu(onSignOut, onSwitchOrg) {
   const rest = [...visibleNav().slice(TAB_COUNT), HELP];
+  // The sidebar is hidden on a phone, so the organisation switcher lives here too (only for people in more than one organisation).
+  const orgs = state.memberships.length > 1
+    ? html`<label class="side-switch menu-switch"><span>Organisation</span><select id="menu-org-switch">${state.memberships.map((m) => html`<option value="${m.organisation_id}" ${m.organisation_id === state.org.id ? 'selected' : ''}>${m.organisation.name}</option>`)}</select></label>`
+    : '';
   const dlg = openModal({
     title: 'Menu',
     hideFooter: true,
-    body: html`<nav class="menu-list" aria-label="More">${rest.map((n) => html`<a class="menu-link" href="${n.href}" data-action="go">${icon(n.id)}<span>${n.label}</span></a>`)}</nav>
+    body: html`${orgs}<nav class="menu-list" aria-label="More">${rest.map((n) => html`<a class="menu-link" href="${n.href}" data-action="go">${icon(n.id)}<span>${n.label}</span></a>`)}</nav>
       <p class="side-user"><span>${state.user.email}</span><span class="side-role">${ROLE_LABEL[state.role]}</span></p>
       <p><button class="btn" type="button" data-action="signout">Sign out</button></p>`,
   });
+  dlg.querySelector('#menu-org-switch')?.addEventListener('change', (e) => { const id = e.target.value; closeModal(); onSwitchOrg(id); });
   dlg.onclick = (e) => {
     const el = e.target.closest('[data-action]');
     if (!el) return;

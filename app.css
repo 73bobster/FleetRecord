@@ -213,6 +213,7 @@ th[aria-sort="descending"] .sort-btn::after { content: "\25BC"; font-size: .65em
 .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
 .panel-history { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
 .panel-history h3 { margin-bottom: 8px; }
+.menu-switch { margin-bottom: 16px; }
 .menu-list { display: grid; gap: 4px; margin-bottom: 16px; }
 .menu-link { display: flex; align-items: center; gap: 12px; padding: 12px; color: var(--ink); text-decoration: none; border-radius: var(--radius); }
 .menu-link:hover { background: var(--paper); }
