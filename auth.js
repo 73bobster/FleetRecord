@@ -1,6 +1,6 @@
 // Signed-out screens: sign in, create account (with invitation), reset password, join with a code.
 import * as api from './api.js';
-import { html, mount, on, plate, toast, logoImg, productLogo, wireLogos } from './ui.js';
+import { html, mount, on, plate, toast, productLogo } from './ui.js';
 import { applyBrand } from './shell.js';
 import { CONFIG } from './config.js';
 import { versionOf } from './versions.js';
@@ -22,14 +22,13 @@ function frame(inner) {
             <li><strong>The right access for each person</strong><span>Each user type decides who can see and change what, including drivers' licence details.</span></li>
             <li><strong>Every change recorded</strong><span>An audit log shows who changed what, and when.</span></li>
           </ul>
-          <div class="auth-plates" aria-hidden="true">${plate('AB12 CDE')}${plate('FM26 MOT')}${plate('XY74 LIC')}</div>
+          <div class="auth-plates" aria-hidden="true">${plate('AB12 CDE')}${plate('FM26 MOT')}${plate('RD18 ROX')}</div>
         </div>
       </aside>
-      <main class="auth-main" id="main"><div class="auth-card"><div class="brand-stack">${productLogo()}${logoImg(CONFIG.brand?.logoUrl, CONFIG.brand?.name || 'FleetRecord')}</div>${inner}
+      <main class="auth-main" id="main"><div class="auth-card"><div class="brand-stack">${productLogo()}</div>${inner}
         <div class="auth-foot"><span class="auth-version">${versionOf('signin')}</span><span>Built by <a href="https://cobaltpinksoftware.com" target="_blank" rel="noopener noreferrer">Cobalt Pink Software</a></span></div>
       </div></main>
     </div>`);
-  wireLogos(root());
 }
 
 // A "Show" button on each password box, so a typing mistake can be spotted. The password is never stored or logged here.
