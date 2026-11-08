@@ -22,7 +22,7 @@ function frame(inner) {
             <li><strong>The right access for each person</strong><span>Each user type decides who can see and change what, including drivers' licence details.</span></li>
             <li><strong>Every change recorded</strong><span>An audit log shows who changed what, and when.</span></li>
           </ul>
-          <div class="auth-plates" aria-hidden="true">${plate('AB12 CDE')}${plate('FM26 MOT')}${plate('XY74 LIC')}</div>
+          <div class="auth-plates" aria-hidden="true">${plate('AB12 CDE')}${plate('FM26 MOT')}${plate('RD18 ROX')}</div>
         </div>
       </aside>
       <main class="auth-main" id="main"><div class="auth-card"><div class="brand-stack">${productLogo()}</div>${inner}
