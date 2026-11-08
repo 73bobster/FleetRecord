@@ -2,21 +2,19 @@
 import * as api from './api.js';
 import { html, mount, on, plate, toast, productLogo } from './ui.js';
 import { applyBrand } from './shell.js';
-import { CONFIG } from './config.js';
 import { versionOf } from './versions.js';
 
 const root = () => document.getElementById('app');
 
 function frame(inner) {
   applyBrand(null);
-  const org = CONFIG.brand?.name;
   mount(root(), html`
     <div class="auth auth-cp">
       <aside class="auth-side" aria-label="About FleetRecord">
         <div class="auth-side-inner">
           <p class="auth-eyebrow">Fleet compliance</p>
           <p class="auth-headline">Every MOT, licence and renewal, <span>under control.</span></p>
-          <p class="auth-line">One secure place for vehicles, drivers, insurance and costs${org ? ` at ${org}` : ''}.</p>
+          <p class="auth-line">One secure place for vehicles, drivers, insurance and costs.</p>
           <ul class="auth-points">
             <li><strong>Your organisation only</strong><span>Database rules keep each organisation's records separate from every other.</span></li>
             <li><strong>The right access for each person</strong><span>Each user type decides who can see and change what, including drivers' licence details.</span></li>
