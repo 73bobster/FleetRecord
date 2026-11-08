@@ -37,7 +37,7 @@
 .auth-cp .auth-card { width: 100%; max-width: 420px; }
 .auth-cp .brand-stack { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 22px; margin-bottom: 36px; }
 .auth-cp .brand-stack .logo { margin: 0; max-height: 44px; width: auto; max-width: 200px; }
-.auth-cp .brand-stack .logo-product { height: 34px; width: auto; max-width: 100%; aspect-ratio: 900 / 193; }
+.auth-cp .brand-stack .logo-product { width: 160px; max-width: 100%; height: auto; }
 .auth-cp .auth-card h1 {
   display: block; width: auto; padding: 0; margin: 0 0 24px; background: none; color: var(--cp-indigo);
   font-weight: 700; font-size: 1.75rem; line-height: 1.2; letter-spacing: -.02em; text-transform: none;
