@@ -9,17 +9,44 @@ const root = () => document.getElementById('app');
 
 function frame(inner) {
   applyBrand(null);
+  const org = CONFIG.brand?.name;
   mount(root(), html`
-    <div class="auth">
-      <aside class="auth-side" aria-hidden="true">
-        <div class="auth-banners"><span class="banner">Every MOT</span><span class="banner">Every licence</span><span class="banner">Every renewal</span></div>
-        <p class="auth-line">Fleet compliance for ${CONFIG.brand?.name || 'your business'}, in one place.</p>
-        <div class="auth-plates">${plate('AB12 CDE')}${plate('FM26 MOT')}${plate('XY74 LIC')}</div>
+    <div class="auth auth-cp">
+      <aside class="auth-side" aria-label="About FleetRecord">
+        <div class="auth-side-inner">
+          <p class="auth-eyebrow">Fleet compliance</p>
+          <p class="auth-headline">Every MOT, licence and renewal, <span>under control.</span></p>
+          <p class="auth-line">One secure place for vehicles, drivers, insurance and costs${org ? ` at ${org}` : ''}.</p>
+          <ul class="auth-points">
+            <li><strong>Your organisation only</strong><span>Database rules keep each organisation's records separate from every other.</span></li>
+            <li><strong>The right access for each person</strong><span>Each user type decides who can see and change what, including drivers' licence details.</span></li>
+            <li><strong>Every change recorded</strong><span>An audit log shows who changed what, and when.</span></li>
+          </ul>
+          <div class="auth-plates" aria-hidden="true">${plate('AB12 CDE')}${plate('FM26 MOT')}${plate('XY74 LIC')}</div>
+        </div>
       </aside>
-      <main class="auth-main" id="main"><div class="auth-card"><div class="brand-stack">${productLogo()}${logoImg(CONFIG.brand?.logoUrl, CONFIG.brand?.name || 'FleetRecord')}</div>${inner}<p class="auth-version">${versionOf('signin')}</p></div></main>
+      <main class="auth-main" id="main"><div class="auth-card"><div class="brand-stack">${productLogo()}${logoImg(CONFIG.brand?.logoUrl, CONFIG.brand?.name || 'FleetRecord')}</div>${inner}
+        <div class="auth-foot"><span class="auth-version">${versionOf('signin')}</span><span>Built by <a href="https://cobaltpinksoftware.com" target="_blank" rel="noopener noreferrer">Cobalt Pink Software</a></span></div>
+      </div></main>
     </div>`);
   wireLogos(root());
 }
+
+// A "Show" button on each password box, so a typing mistake can be spotted. The password is never stored or logged here.
+function wirePasswordToggles() {
+  root().querySelectorAll('.pw').forEach((box) => {
+    const input = box.querySelector('input');
+    const btn = box.querySelector('.pw-toggle');
+    if (!input || !btn) return;
+    btn.addEventListener('click', () => {
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      btn.setAttribute('aria-pressed', String(show));
+    });
+  });
+}
+const pwBox = (autocomplete, label = 'Password') => html`<div class="field"><label for="password">${label}</label><div class="pw"><input id="password" name="password" type="password" required minlength="8" autocomplete="${autocomplete}"><button class="pw-toggle" type="button" aria-pressed="false" aria-controls="password">Show</button></div>${autocomplete === 'new-password' ? html`<p class="hint">At least 8 characters.</p>` : ''}</div>`;
 
 function wireForm(handler) {
   const form = root().querySelector('form');
@@ -32,6 +59,7 @@ function wireForm(handler) {
     try { await handler(form); } catch (ex) { err.textContent = ex.message; err.hidden = false; btn.disabled = false; }
   };
   form.querySelector('input')?.focus();
+  wirePasswordToggles();
 }
 
 const redirectUrl = (invite) => `${location.origin}${location.pathname}${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`;
@@ -45,7 +73,7 @@ export function showAuth({ mode = 'signin', invite = null, notice = '' } = {}) {
     ${notice ? html`<p class="notice">${notice}</p>` : ''}
     <form class="stack">
       <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required autocomplete="username" inputmode="email"></div>
-      ${forgot ? '' : html`<div class="field"><label for="password">Password</label><input id="password" name="password" type="password" required minlength="8" autocomplete="${signup ? 'new-password' : 'current-password'}">${signup ? html`<p class="hint">At least 8 characters.</p>` : ''}</div>`}
+      ${forgot ? '' : pwBox(signup ? 'new-password' : 'current-password')}
       <p class="form-error" role="alert" hidden></p>
       <button class="btn btn-primary btn-block" type="submit">${forgot ? 'Send reset link' : signup ? 'Create account' : 'Sign in'}</button>
     </form>
@@ -86,7 +114,7 @@ export function showRecovery(onDone) {
   frame(html`
     <h1>Choose a new password</h1>
     <form class="stack">
-      <div class="field"><label for="password">New password</label><input id="password" name="password" type="password" required minlength="8" autocomplete="new-password"><p class="hint">At least 8 characters.</p></div>
+      ${pwBox('new-password', 'New password')}
       <p class="form-error" role="alert" hidden></p>
       <button class="btn btn-primary btn-block" type="submit">Save password</button>
     </form>`);
