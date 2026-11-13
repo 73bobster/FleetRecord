@@ -43,7 +43,13 @@ function wirePasswordToggles() {
     });
   });
 }
-const pwBox = (autocomplete, label = 'Password') => html`<div class="field"><label for="password">${label}</label><div class="pw"><input id="password" name="password" type="password" required minlength="8" autocomplete="${autocomplete}"><button class="pw-toggle" type="button" aria-pressed="false" aria-controls="password">Show</button></div>${autocomplete === 'new-password' ? html`<p class="hint">At least 8 characters.</p>` : ''}</div>`;
+// Must match the password rules set in Supabase (Authentication > Sign In / Providers > Email).
+export const PASSWORD_RULE = 'At least 10 characters, with a lowercase letter, an uppercase letter, a number and a symbol.';
+export function passwordProblem(pw) {
+  if (pw.length < 10 || !/[a-z]/.test(pw) || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) return `That password is too weak. ${PASSWORD_RULE}`;
+  return '';
+}
+const pwBox = (autocomplete, label = 'Password') => html`<div class="field"><label for="password">${label}</label><div class="pw"><input id="password" name="password" type="password" required ${autocomplete === 'new-password' ? html`minlength="10"` : ''} autocomplete="${autocomplete}"><button class="pw-toggle" type="button" aria-pressed="false" aria-controls="password">Show</button></div>${autocomplete === 'new-password' ? html`<p class="hint">${PASSWORD_RULE}</p>` : ''}</div>`;
 
 function wireForm(handler) {
   const form = root().querySelector('form');
@@ -90,6 +96,8 @@ export function showAuth({ mode = 'signin', invite = null, notice = '' } = {}) {
       await api.auth.resetPassword(email, redirectUrl(invite));
       showAuth({ mode: 'signin', invite, notice: 'If an account exists for that email, a reset link is on its way.' });
     } else if (signup) {
+      const problem = passwordProblem(form.elements.password.value);
+      if (problem) throw new Error(problem);
       const data = await api.auth.signUp(email, form.elements.password.value, redirectUrl(invite));
       if (!data.session) showCheckEmail(email, invite);
     } else {
@@ -116,6 +124,8 @@ export function showRecovery(onDone) {
       <button class="btn btn-primary btn-block" type="submit">Save password</button>
     </form>`);
   wireForm(async (form) => {
+    const problem = passwordProblem(form.elements.password.value);
+    if (problem) throw new Error(problem);
     await api.auth.updatePassword(form.elements.password.value);
     toast('Password updated.');
     await onDone();

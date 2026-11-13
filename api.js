@@ -48,7 +48,7 @@ function authFail(error) {
   if (/invalid login credentials/i.test(msg)) text = 'Email or password is incorrect.';
   else if (/email not confirmed/i.test(msg)) text = 'Confirm your email first. Check your inbox for the link we sent.';
   else if (/already registered|already been registered/i.test(msg)) text = 'An account with that email already exists. Sign in instead.';
-  else if (/password should be at least|weak password/i.test(msg)) text = 'Choose a longer password (at least 8 characters).';
+  else if (/password should|weak password|password is too|pwned|known to be weak/i.test(msg)) text = 'That password is too weak. At least 10 characters, with a lowercase letter, an uppercase letter, a number and a symbol.';
   else if (/rate limit|too many/i.test(msg)) text = 'Too many attempts. Wait a few minutes and try again.';
   const e = new Error(text); e.raw = error; throw e;
 }
